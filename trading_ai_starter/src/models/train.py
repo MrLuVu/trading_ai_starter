@@ -4,7 +4,29 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.metrics import roc_auc_score
-from ..features.make_features import add_basic_features
+from ..features.make_features import add_basic_features, create_features
+
+# Carica dati storici
+df = pd.read_csv("data/EURUSD_M5.csv", parse_dates=['timestamp'])
+
+# Crea feature
+df = create_features(df)
+
+# Genera segnale target basato su strategia regole (placeholder)
+df['signal'] = 0
+df.loc[df['SMA_10'] > df['SMA_30'], 'signal'] = 1   # BUY
+df.loc[df['SMA_10'] < df['SMA_30'], 'signal'] = -1  # SELL
+
+X = df[['SMA_10','SMA_30','RSI_14','ATR_14','Momentum_10']]
+y = df['signal']
+
+# Addestra modello
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X, y)
+
+# Salva modello
+joblib.dump(model, "src/models/model.pkl")
+print("Modello salvato come model.pkl")
 
 def main(csv_path: str, out_model: str = "models/model.pkl", out_scaler: str = "models/scaler.pkl"):
     df = pd.read_csv(csv_path)
