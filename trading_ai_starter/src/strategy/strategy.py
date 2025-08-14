@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import pandas as pd
 import numpy as np
-from ..features.make_features import add_basic_features
+from ..features.make_features import add_basic_features, create_features
 from .. import config
 
 @dataclass
@@ -20,6 +20,25 @@ class Strategy:
     """
     def __init__(self, cfg: StrategyConfig | None = None):
         self.cfg = cfg or StrategyConfig()
+
+    # Carica modello ML
+    model = joblib.load("src/models/model.pkl")
+    
+    def signal_generator_live(latest_data):
+        df = pd.DataFrame([latest_data])
+        df = create_features(df)
+        if df.empty:
+            return "HOLD"
+        
+        X = df[['SMA_10','SMA_30','RSI_14','ATR_14','Momentum_10']]
+        pred = model.predict(X)[0]
+        
+        if pred == 1:
+            return "BUY"
+        elif pred == -1:
+            return "SELL"
+        else:
+            return "HOLD"
 
     def prepare_features(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
